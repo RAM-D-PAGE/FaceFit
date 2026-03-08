@@ -1,361 +1,487 @@
 <!DOCTYPE html>
 <html lang="th">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FaceFit: เกมฝึกพูด ฟื้นฟูกล้ามเนื้อใบหน้า</title>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600;700&family=Sarabun:wght@400;600&display=swap"
-        rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- PWA Settings -->
-    <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
-    <link rel="icon" type="image/png" href="assets/logo.png">
-    <meta name="theme-color" content="#4A90E2">
-    <link rel="apple-touch-icon" href="assets/logo.png">
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker Registered'))
-                    .catch(err => console.error('Service Worker Registration Failed', err));
-            });
-        }
-    </script>
-</head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FaceFit — เกมฝึกพูดฟื้นฟูกล้ามเนื้อใบหน้า</title>
 
+  <!-- MediaPipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700;800&family=Sarabun:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" crossorigin="use-credentials">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <meta name="theme-color" content="#FF6B6B">
+  <link rel="apple-touch-icon" href="assets/logo.png">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('SW registered'))
+          .catch(err => console.warn('SW failed:', err));
+      });
+    }
+  </script>
+</head>
 <body>
 
-    <!-- หน้าเลือกระบบเข้าใช้งาน (Login Screen) -->
-    <div id="screen-login" class="screen active fade-in">
-        <div class="glass-card text-center">
-            <h2 class="section-title">เข้าสู่ระบบ (FaceFit)</h2>
-            <p class="desc">กรุณากรอกรหัส PIN จำนวน 4 หลัก</p>
-            <div style="max-width:300px; margin: 0 auto; margin-bottom: 20px;">
-                <input type="password" id="login-pin" class="form-control" placeholder="รหัส PIN 4 หลัก"
-                    style="width: 100%; padding: 15px; font-size: 1.5rem; text-align:center; border-radius: 10px; border: 1px solid #ccc; margin-bottom: 15px;">
+<!-- ─────────────────────────────────────────
+     TOAST CONTAINER
+───────────────────────────────────────── -->
+<div id="toast-container"></div>
 
-                <button class="btn btn-primary pulse-anim" style="width: 100%; justify-content: center;"
-                    onclick="app.doLogin()">
-                    <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
-                </button>
+<!-- ─────────────────────────────────────────
+     CONFETTI CANVAS
+───────────────────────────────────────── -->
+<canvas id="confetti-canvas"></canvas>
 
-                <div id="login-error" class="text-error" style="display:none; margin-top:10px; font-weight:bold;">
-                    รหัส PIN ไม่ถูกต้อง
-                </div>
+<!-- ─────────────────────────────────────────
+     SCREEN: LOGIN
+───────────────────────────────────────── -->
+<div id="screen-login" class="screen active">
+  <div class="glass-card text-center" style="max-width:420px;">
+    <div class="app-logo">
+      <i class="fa-solid fa-microphone-lines"></i>
+    </div>
+    <h1 class="brand-title">FaceFit</h1>
+    <p class="brand-sub">เกมฝึกพูด ฟื้นฟูกล้ามเนื้อใบหน้า</p>
+    <p class="text-sub" style="font-size:0.9rem; margin-bottom:28px;">กรุณาใส่รหัส PIN เพื่อเข้าสู่ระบบ</p>
 
-                <div style="margin-top: 30px;">
-                    <p class="desc" style="font-size: 0.9rem;">หรือทดลองใช้แบบไม่บันทึกข้อมูล</p>
-                    <button class="btn btn-secondary" style="width: 100%; justify-content: center; margin-bottom: 10px;"
-                        onclick="app.skipLogin()">
-                        <i class="fa-solid fa-user-secret"></i> เล่นในฐานะบุคคลทั่วไป
-                    </button>
-                    <button class="btn btn-warning" style="width: 100%; justify-content: center;"
-                        onclick="app.showScreen('screen-admin-login')">
-                        <i class="fa-solid fa-user-nurse"></i> สำหรับพยาบาล/แอดมิน
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div class="pin-input-wrap">
+      <i class="fa-solid fa-lock"></i>
+      <input type="password" id="login-pin" class="form-control" placeholder="••••"
+             maxlength="6" inputmode="numeric"
+             onkeydown="if(event.key==='Enter') app.doLogin()">
     </div>
 
-    <!-- หน้าเลือกระบบแอดมิน (Admin Login) -->
-    <div id="screen-admin-login" class="screen fade-in">
-        <div class="glass-card text-center" style="max-width:400px; margin:auto;">
-            <h2 class="section-title text-warning"><i class="fa-solid fa-user-nurse"></i> ระบบจัดการ (แอดมิน)</h2>
-            <div style="margin-top: 20px;">
-                <input type="text" id="admin-user" class="form-control" placeholder="ชื่อผู้ใช้งาน (Admin)"
-                    style="width: 100%; padding: 15px; font-size: 1.2rem; margin-bottom: 15px; border-radius: 10px;">
-                <input type="password" id="admin-pass" class="form-control" placeholder="รหัสผ่าน"
-                    style="width: 100%; padding: 15px; font-size: 1.2rem; margin-bottom: 15px; border-radius: 10px;">
+    <button class="btn btn-primary btn-block pulse-btn" onclick="app.doLogin()" style="margin-bottom:14px;">
+      <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบ
+    </button>
 
-                <button class="btn btn-warning pulse-anim"
-                    style="width: 100%; justify-content: center; margin-bottom:10px;" onclick="app.doAdminLogin()">
-                    <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบแอดมิน
-                </button>
-                <button class="btn btn-secondary" style="width: 100%; justify-content: center;"
-                    onclick="app.showScreen('screen-login')">
-                    <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
-                </button>
+    <div id="login-error" class="error-msg"></div>
 
-                <div id="admin-error" class="text-error" style="display:none; margin-top:10px; font-weight:bold;">
-                    ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง
-                </div>
-            </div>
+    <div class="login-divider">หรือ</div>
+
+    <button class="btn btn-secondary btn-block" onclick="app.skipLogin()" style="margin-bottom:10px;">
+      <i class="fa-solid fa-user-secret"></i> ทดลองใช้โดยไม่บันทึกข้อมูล
+    </button>
+    <button class="btn btn-warning btn-block" onclick="app.showScreen('screen-admin-login')">
+      <i class="fa-solid fa-user-nurse"></i> สำหรับพยาบาล / แอดมิน
+    </button>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────
+     SCREEN: ADMIN LOGIN
+───────────────────────────────────────── -->
+<div id="screen-admin-login" class="screen">
+  <div class="glass-card text-center" style="max-width:420px;">
+    <div class="app-logo" style="background: linear-gradient(135deg,#F39C12,#D68910);">
+      <i class="fa-solid fa-user-nurse"></i>
+    </div>
+    <h2 style="font-family:'Kanit',sans-serif; font-size:1.6rem; margin-bottom:6px;">ระบบสำหรับแอดมิน</h2>
+    <p class="text-sub" style="font-size:0.9rem; margin-bottom:24px;">สำหรับพยาบาลและผู้ดูแลระบบเท่านั้น</p>
+
+    <input type="text" id="admin-user" class="form-control" placeholder="ชื่อผู้ใช้งาน"
+           style="margin-bottom:10px;" onkeydown="if(event.key==='Enter') app.doAdminLogin()">
+    <input type="password" id="admin-pass" class="form-control" placeholder="รหัสผ่าน"
+           style="margin-bottom:14px;" onkeydown="if(event.key==='Enter') app.doAdminLogin()">
+
+    <button class="btn btn-warning btn-block" onclick="app.doAdminLogin()" style="margin-bottom:10px;">
+      <i class="fa-solid fa-right-to-bracket"></i> เข้าสู่ระบบแอดมิน
+    </button>
+    <button class="btn btn-secondary btn-block" onclick="app.showScreen('screen-login')">
+      <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
+    </button>
+
+    <div id="admin-error" class="error-msg"></div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────
+     SCREEN: ADMIN DASHBOARD
+───────────────────────────────────────── -->
+<div id="screen-admin-dash" class="screen" style="align-items:flex-start; padding:20px;">
+  <div style="max-width:900px; width:100%; margin:0 auto;">
+
+    <!-- Admin Header -->
+    <div class="admin-header glass-card no-stripe">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:1.3rem;">
+          <i class="fa-solid fa-cogs"></i>
         </div>
+        <div>
+          <h2 style="color:white; font-size:1.2rem; margin:0;">จัดการฐานข้อมูล FaceFit</h2>
+          <p style="color:rgba(255,255,255,0.6); font-size:0.82rem; margin:0;">ระบบสำหรับพยาบาล / แอดมิน</p>
+        </div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="app.adminLogout()">
+        <i class="fa-solid fa-sign-out-alt"></i> ออกจากระบบ
+      </button>
     </div>
 
-    <!-- หน้าจัดการระบบหลังบ้าน (Admin Dashboard) -->
-    <div id="screen-admin-dash" class="screen fade-in">
-        <div class="game-container" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
-            <div class="game-header glass-card" style="margin-bottom: 20px;">
-                <h2 style="margin: 0;" class="text-warning"><i class="fa-solid fa-cogs"></i> จัดการฐานข้อมูล (FaceFit)
-                </h2>
-                <button class="btn btn-danger btn-icon" onclick="app.adminLogout()" title="ออกจากระบบ">
-                    <i class="fa-solid fa-sign-out-alt"></i>
-                </button>
-            </div>
-
-            <div class="glass-card" style="margin-bottom: 20px;">
-                <h3 class="text-primary" style="margin-top: 0;"><i class="fa-solid fa-users"></i> จัดการข้อมูลผู้ป่วย
-                </h3>
-                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                    <input type="text" id="new-patient-name" placeholder="ชื่อผู้ป่วย" class="form-control"
-                        style="flex: 1; min-width: 150px;">
-                    <input type="text" id="new-patient-pin" placeholder="PIN (4-6 หลัก)" class="form-control"
-                        style="width: 150px;">
-                    <button class="btn btn-success" onclick="app.adminAddPatient()"><i class="fa-solid fa-plus"></i>
-                        เพิ่มผู้ป่วย</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table class="data-table" id="admin-patients-table">
-                        <thead>
-                            <tr>
-                                <th>ชื่อผู้ป่วย</th>
-                                <th>PIN</th>
-                                <th>จำนวนรอบที่ฝึก</th>
-                                <th>จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Loading from JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="glass-card">
-                <h3 class="text-success" style="margin-top: 0;"><i class="fa-solid fa-book"></i> จัดการชุดคำศัพท์</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
-                    <input type="text" id="new-vocab-word" placeholder="คำศัพท์ (เช่น 'อา')" class="form-control">
-                    <input type="text" id="new-vocab-hint" placeholder="คำใบ้/คำแนะนำสั้นๆ" class="form-control">
-                    <select id="new-vocab-action" class="form-control">
-                        <option value="open">ท่าทาง: อ้าปาก</option>
-                        <option value="smile">ท่าทาง: ฉีกยิ้ม</option>
-                        <option value="pucker">ท่าทาง: ทำปากจู๋</option>
-                    </select>
-                    <select id="new-vocab-diff" class="form-control">
-                        <option value="easy">ระดับ: ง่าย</option>
-                        <option value="normal">ระดับ: ปานกลาง</option>
-                        <option value="hard">ระดับ: ยาก</option>
-                    </select>
-                    <input type="text" id="new-vocab-aliases" placeholder="คำพ้องเสียง คั่นด้วยลูกน้ำ (เช่น อ้า,หา)"
-                        class="form-control" style="grid-column: span 2;">
-                    <button class="btn btn-success" style="grid-column: span 2;" onclick="app.adminAddVocab()"><i
-                            class="fa-solid fa-plus"></i> เพิ่มคำศัพท์ในฐานข้อมูล</button>
-                </div>
-                <div style="overflow-x: auto;">
-                    <table class="data-table" id="admin-vocab-table">
-                        <thead>
-                            <tr>
-                                <th>ระดับ</th>
-                                <th>คำศัพท์</th>
-                                <th>จุดประสงค์ (ท่า)</th>
-                                <th>คำพ้องเสียง</th>
-                                <th>จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Loading from JS -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+    <!-- Patient Management -->
+    <div class="admin-section">
+      <div class="admin-section-title section-patients">
+        <span class="section-icon"><i class="fa-solid fa-users"></i></span>
+        จัดการข้อมูลผู้ป่วย
+      </div>
+      <div class="admin-form-grid" style="grid-template-columns:1fr 160px auto;">
+        <input type="text" id="new-patient-name" class="form-control" placeholder="ชื่อผู้ป่วย">
+        <input type="text" id="new-patient-pin" class="form-control" placeholder="PIN (4-6 หลัก)" inputmode="numeric" maxlength="6">
+        <button class="btn btn-teal" onclick="app.adminAddPatient()">
+          <i class="fa-solid fa-plus"></i> เพิ่ม
+        </button>
+      </div>
+      <div class="data-table-wrap">
+        <table class="data-table" id="admin-patients-table">
+          <thead>
+            <tr>
+              <th>ชื่อผู้ป่วย</th>
+              <th>PIN</th>
+              <th>จำนวนรอบที่ฝึก</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="4" style="text-align:center;color:var(--text-hint);padding:20px;">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- หน้าแรก (Home Screen) -->
-    <div id="screen-home" class="screen fade-in">
-        <div class="glass-card text-center">
-            <div class="hero-iconbounce">
-                <i class="fa-solid fa-microphone-lines home-icon"></i>
-            </div>
-            <h1 class="gradient-text">FaceFit Rehab</h1>
-            <p class="subtitle">เกมฝึกพูดและบริหารกล้ามเนื้อใบหน้า</p>
-            <p class="desc">มาสนุกกับการออกเสียงให้ชัดเจนกันเถอะครับ!</p>
-            <button class="btn btn-primary btn-lg pulse-anim" onclick="app.showScreen('screen-difficulty')">
-                <i class="fa-solid fa-play"></i> เริ่มเล่นเกม
-            </button>
-        </div>
+    <!-- Vocab Management -->
+    <div class="admin-section">
+      <div class="admin-section-title section-vocab">
+        <span class="section-icon"><i class="fa-solid fa-book-open"></i></span>
+        จัดการชุดคำศัพท์
+      </div>
+      <div class="admin-form-grid-2">
+        <input type="text" id="new-vocab-word" class="form-control" placeholder="คำศัพท์ (เช่น อา)">
+        <input type="text" id="new-vocab-hint" class="form-control" placeholder="คำแนะนำสั้นๆ">
+        <select id="new-vocab-action" class="form-control">
+          <option value="open">ท่า: อ้าปาก</option>
+          <option value="smile">ท่า: ฉีกยิ้ม</option>
+          <option value="pucker">ท่า: ทำปากจู๋</option>
+        </select>
+        <select id="new-vocab-diff" class="form-control">
+          <option value="easy">ระดับ: ง่าย</option>
+          <option value="normal">ระดับ: ปานกลาง</option>
+          <option value="hard">ระดับ: ยาก</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px;">
+        <input type="text" id="new-vocab-aliases" class="form-control" placeholder="คำพ้องเสียง คั่นด้วยลูกน้ำ (เช่น อ้า,หา)">
+      </div>
+      <button class="btn btn-success btn-block" onclick="app.adminAddVocab()" style="margin-bottom:16px;">
+        <i class="fa-solid fa-plus"></i> เพิ่มคำศัพท์ในฐานข้อมูล
+      </button>
+      <div class="data-table-wrap">
+        <table class="data-table" id="admin-vocab-table">
+          <thead>
+            <tr>
+              <th>ระดับ</th>
+              <th>คำศัพท์</th>
+              <th>จุดประสงค์</th>
+              <th>คำพ้องเสียง</th>
+              <th>จัดการ</th>
+            </tr>
+          </thead>
+          <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-hint);padding:20px;">กำลังโหลด...</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- หน้าเลือกระดับความยาก (Difficulty Screen) -->
-    <div id="screen-difficulty" class="screen fade-in">
-        <div class="glass-card wide-card text-center">
-            <h2 class="section-title">เลือกระดับความท้าทาย</h2>
-            <p class="desc">เลือกระดับที่เหมาะกับคุณเพื่อเริ่มฝึกพูด</p>
+  </div>
+</div>
 
-            <div class="difficulty-grid">
-                <div class="diff-card" onclick="app.startGame('easy')">
-                    <div class="diff-icon text-success"><i class="fa-solid fa-face-smile-beam"></i></div>
-                    <h3>ระดับง่าย</h3>
-                    <p>คำสั้นๆ พยางค์เดียว เน้นสระเสียงยาวเพื่อฝึกอ้าปาก</p>
-                </div>
-                <div class="diff-card" onclick="app.startGame('normal')">
-                    <div class="diff-icon text-warning"><i class="fa-solid fa-comment-dots"></i></div>
-                    <h3>ระดับปานกลาง</h3>
-                    <p>คำสองพยางค์ ที่ใช้บ่อยในชีวิตประจำวัน</p>
-                </div>
-                <div class="diff-card" onclick="app.startGame('hard')">
-                    <div class="diff-icon text-danger"><i class="fa-solid fa-bullhorn"></i></div>
-                    <h3>ระดับยาก</h3>
-                    <p>ประโยคสั้นๆ เพื่อฝึกการพูดให้ลื่นไหลต่อเนื่อง</p>
-                </div>
-            </div>
-            <button class="btn btn-secondary mt-20" onclick="app.showScreen('screen-home')">
-                <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
-            </button>
-        </div>
+<!-- ─────────────────────────────────────────
+     SCREEN: HOME
+───────────────────────────────────────── -->
+<div id="screen-home" class="screen">
+  <div class="glass-card text-center">
+    <div class="app-logo">
+      <i class="fa-solid fa-microphone-lines"></i>
+    </div>
+    <h1 class="brand-title">FaceFit Rehab</h1>
+    <p class="brand-sub">เกมฝึกพูดและบริหารกล้ามเนื้อใบหน้า</p>
+
+    <div class="welcome-chip" id="home-welcome-chip">
+      <i class="fa-solid fa-hand-wave"></i> ยินดีต้อนรับ!
     </div>
 
-    <!-- หน้าปรับเทียบ (Calibration Screen) -->
-    <div id="screen-calibration" class="screen fade-in">
-        <div class="glass-card text-center">
-            <h2 class="section-title">เตรียมความพร้อมก่อนเริ่ม</h2>
-            <p class="desc">เพื่อให้เกมปรับระดับความกว้างปากให้พอดีกับคุณที่สุด</p>
+    <p class="text-sub" style="font-size:0.95rem; margin-bottom:28px;">
+      มาสนุกกับการออกเสียงให้ชัดเจนและบริหารกล้ามเนื้อใบหน้ากันเถอะครับ
+    </p>
 
-            <div class="camera-wrapper" style="max-width: 400px; margin: 0 auto 20px auto;">
-                <canvas class="output_canvas" id="calib_canvas"></canvas>
-                <!-- สถานะโหลดกล้อง -->
-                <div id="calib-loading" class="camera-overlay">
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    <p>กำลังเปิดกล้อง...</p>
-                </div>
-            </div>
-
-            <h3 id="calib-instruction" class="text-primary" style="font-size: 1.5rem; margin-bottom: 20px;">
-                กรุณามองกล้องให้เห็นหน้าชัดเจน
-            </h3>
-
-            <div class="progress-wrap" style="max-width: 400px; margin: 0 auto;">
-                <div class="progress-bg">
-                    <div id="calib-progress-bar" class="progress-fill" style="width: 0%;"></div>
-                </div>
-            </div>
-
-            <button id="btn-calib-action" class="btn btn-primary btn-lg pulse-anim mt-20"
-                onclick="app.doCalibrationAction()" style="display: none;">
-                เริ่มบันทึกค่า
-            </button>
-        </div>
+    <!-- Quick Stats -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:28px;" id="home-stats-row">
+      <div style="background:rgba(78,205,196,0.08); border:1px solid rgba(78,205,196,0.2); border-radius:14px; padding:14px;">
+        <div style="font-size:1.6rem; font-family:'Kanit',sans-serif; font-weight:700; color:var(--teal-dark);" id="home-stat-sessions">—</div>
+        <div style="font-size:0.8rem; color:var(--text-hint);">รอบที่ฝึกแล้ว</div>
+      </div>
+      <div style="background:rgba(255,209,102,0.08); border:1px solid rgba(255,209,102,0.3); border-radius:14px; padding:14px;">
+        <div style="font-size:1.6rem; font-family:'Kanit',sans-serif; font-weight:700; color:var(--gold-dark);" id="home-stat-score">—</div>
+        <div style="font-size:0.8rem; color:var(--text-hint);">คะแนนสูงสุด</div>
+      </div>
     </div>
 
-    <!-- หน้าเกม (Game Screen) -->
-    <div id="screen-game" class="screen fade-in">
-        <div class="game-container">
-            <!-- Header Bar -->
-            <div class="game-header glass-card">
-                <div class="stat-box">
-                    <i class="fa-solid fa-star text-warning"></i>
-                    <span class="stat-label">คะแนน</span>
-                    <span id="game-score" class="stat-value">0</span>
-                </div>
-                <div class="stat-box">
-                    <i class="fa-solid fa-bullseye text-primary"></i>
-                    <span class="stat-label">คำที่</span>
-                    <span id="game-round" class="stat-value">1/5</span>
-                </div>
-                <button class="btn btn-icon btn-danger" onclick="app.endGameForce()" title="จบเกม">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
+    <button class="btn btn-primary btn-lg btn-block pulse-btn" onclick="app.showScreen('screen-difficulty')">
+      <i class="fa-solid fa-play"></i> เริ่มเล่นเกม
+    </button>
+  </div>
+</div>
 
-            <!-- กล้องและการแสดงรูป -->
-            <div class="camera-wrapper">
-                <canvas class="output_canvas" id="game_canvas"></canvas>
+<!-- ─────────────────────────────────────────
+     SCREEN: DIFFICULTY
+───────────────────────────────────────── -->
+<div id="screen-difficulty" class="screen">
+  <div class="glass-card wide-card text-center">
+    <h2 style="font-family:'Kanit',sans-serif; font-size:1.8rem; margin-bottom:6px;">เลือกระดับความท้าทาย</h2>
+    <p class="text-sub" style="margin-bottom:4px;">เลือกระดับที่เหมาะกับความสามารถของคุณ</p>
 
-                <!-- สถานะโหลดกล้อง -->
-                <div id="camera-loading" class="camera-overlay">
-                    <i class="fa-solid fa-spinner fa-spin"></i>
-                    <p>กำลังเปิดกล้องและระบบเสียง...</p>
-                </div>
-                <!-- สถานะกำลังฟังเสียง -->
-                <div id="listening-indicator" class="listening-overlay" style="display: none;">
-                    <div class="mic-pulse">
-                        <i class="fa-solid fa-microphone"></i>
-                    </div>
-                    <span>กำลังฟังเสียง...พูดเลย!</span>
-                </div>
-            </div>
-
-            <!-- คำสั่งและคำที่ต้องพูด -->
-            <div class="task-card glass-card">
-                <div class="task-instruction" id="task-instruction">อ้าปากกว้างๆ แล้วพูดคำว่า</div>
-                <div class="target-word" id="target-word">เตรียมพร้อม</div>
-
-                <!-- Feedback Box -->
-                <div id="speech-feedback" class="feedback-box">
-                    รอฟังเสียงของคุณอยู่...
-                </div>
-
-                <div class="progress-wrap">
-                    <div class="progress-bg">
-                        <div id="game-progress-bar" class="progress-fill"></div>
-                    </div>
-                    <div class="progress-label" id="progress-text">ท่าทางปาก: 0%</div>
-                </div>
-
-                <div class="action-buttons">
-                    <button id="btn-listen" class="btn btn-primary btn-large" onclick="app.startListening()">
-                        <i class="fa-solid fa-microphone"></i> กดเพื่อเริ่มพูด
-                    </button>
-                    <button class="btn btn-secondary" onclick="app.skipWord()">
-                        ข้ามคำนี้ <i class="fa-solid fa-forward"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div class="difficulty-grid">
+      <!-- Easy -->
+      <div class="diff-card diff-easy" onclick="app.startGame('easy')">
+        <div class="diff-badge">ง่าย</div>
+        <div class="diff-icon-wrap"><i class="fa-solid fa-face-smile-beam"></i></div>
+        <h3>ระดับง่าย</h3>
+        <p>คำสั้น พยางค์เดียว เน้นสระเสียงยาว เหมาะสำหรับผู้เริ่มต้น</p>
+      </div>
+      <!-- Normal -->
+      <div class="diff-card diff-normal" onclick="app.startGame('normal')">
+        <div class="diff-badge">ปานกลาง</div>
+        <div class="diff-icon-wrap"><i class="fa-solid fa-comment-dots"></i></div>
+        <h3>ระดับปานกลาง</h3>
+        <p>คำสองพยางค์ที่ใช้บ่อยในชีวิตประจำวัน</p>
+      </div>
+      <!-- Hard -->
+      <div class="diff-card diff-hard" onclick="app.startGame('hard')">
+        <div class="diff-badge">ยาก</div>
+        <div class="diff-icon-wrap"><i class="fa-solid fa-bullhorn"></i></div>
+        <h3>ระดับยาก</h3>
+        <p>ประโยคสั้นๆ เพื่อฝึกการพูดให้ลื่นไหลต่อเนื่อง</p>
+      </div>
     </div>
 
-    <!-- หน้าสรุปผล (Result Screen) -->
-    <div id="screen-result" class="screen fade-in">
-        <div class="glass-card text-center">
-            <div class="medal-icon bounce-in">
-                <i class="fa-solid fa-trophy text-warning" style="font-size: 80px;"></i>
-            </div>
-            <h1 class="text-success mt-20">เก่งมากเลยครับ!</h1>
-            <p class="desc">คุณฝึกพูดและบริหารกล้ามเนื้อใบหน้าได้สำเร็จ</p>
+    <button class="btn btn-secondary mt-16" onclick="app.showScreen('screen-home')">
+      <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
+    </button>
+  </div>
+</div>
 
-            <div class="score-board mt-20 mb-20">
-                <div class="score-title">คะแนนของคุณ</div>
-                <div class="total-score" id="res-score">0</div>
-            </div>
+<!-- ─────────────────────────────────────────
+     SCREEN: CALIBRATION
+───────────────────────────────────────── -->
+<div id="screen-calibration" class="screen">
+  <div class="glass-card" style="max-width:560px; text-align:center;">
+    <h2 style="font-family:'Kanit',sans-serif; font-size:1.6rem; margin-bottom:6px;">ปรับเทียบกล้อง</h2>
+    <p class="text-sub" style="font-size:0.9rem; margin-bottom:20px;">ระบบจะปรับตามการเคลื่อนไหวของใบหน้าคุณโดยเฉพาะ</p>
 
-            <div class="stats-row mb-20">
-                <div class="stat-item">
-                    <i class="fa-solid fa-check text-success"></i>
-                    <span>พูดผ่าน: <strong id="res-completed">0</strong> คำ</span>
-                </div>
-                <div class="stat-item">
-                    <i class="fa-solid fa-forward text-warning"></i>
-                    <span>ข้าม: <strong id="res-skipped">0</strong> คำ</span>
-                </div>
-            </div>
-
-            <button class="btn btn-primary btn-lg pulse-anim" onclick="app.showScreen('screen-home')">
-                <i class="fa-solid fa-rotate-right"></i> เล่นอีกครั้ง
-            </button>
-        </div>
+    <!-- Camera Preview -->
+    <div class="camera-wrapper" style="max-width:420px; margin:0 auto 20px auto;">
+      <canvas class="output_canvas" id="calib_canvas"></canvas>
+      <div class="face-frame"></div>
+      <div id="calib-loading" class="camera-overlay">
+        <div class="spin-icon"></div>
+        <p>กำลังเปิดกล้อง...</p>
+      </div>
     </div>
 
-    <!-- เสียงเอฟเฟกต์ -->
-    <!-- (ใช้ไฟล์ใน /assets/ ถ้ามี หรือใช้ fallback beep ผ่าน Web Audio API ใน JS ได้ชั่วคราว) -->
-    <audio id="snd-success" src="assets/success-sound.mp3"></audio>
-    <audio id="snd-cheer" src="assets/cheer-voice.mp3"></audio>
-    <!-- ซ่อน Video ไว้ด้านนอก (ใช้ร่วมกันทุกหน้า) -->
-    <video class="input_video" autoplay playsinline style="display:none;"></video>
+    <!-- Calibration Steps Guide -->
+    <div class="calib-steps">
+      <div class="calib-step" id="calib-step-1">
+        <div class="calib-step-icon">😐</div>
+        <span>หน้าปกติ</span>
+      </div>
+      <div style="display:flex;align-items:center;color:var(--text-hint);">→</div>
+      <div class="calib-step" id="calib-step-2">
+        <div class="calib-step-icon">😮</div>
+        <span>อ้าปาก</span>
+      </div>
+      <div style="display:flex;align-items:center;color:var(--text-hint);">→</div>
+      <div class="calib-step" id="calib-step-3">
+        <div class="calib-step-icon">😁</div>
+        <span>ฉีกยิ้ม</span>
+      </div>
+    </div>
 
-    <!-- Scripts -->
-    <script src="config.js"></script>
-    <script src="db.js"></script>
-    <script src="game.js"></script>
+    <!-- Status Text -->
+    <div class="calib-status-text text-teal" id="calib-instruction">
+      มองกล้องให้เห็นหน้าชัดเจน
+    </div>
+
+    <!-- Progress -->
+    <div class="mouth-progress-wrap" style="margin:12px 0;">
+      <div class="progress-track">
+        <div id="calib-progress-bar" class="progress-fill"></div>
+      </div>
+    </div>
+
+    <button id="btn-calib-action" class="btn btn-primary btn-lg pulse-btn"
+            onclick="app.doCalibrationAction()" style="display:none;">
+      <i class="fa-solid fa-play"></i> เริ่มบันทึกค่า
+    </button>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────
+     SCREEN: GAME
+───────────────────────────────────────── -->
+<div id="screen-game" class="screen" style="padding:12px 16px;">
+  <div class="game-container">
+
+    <!-- Game Header -->
+    <div class="game-header glass-card no-stripe">
+      <div class="stat-pill pill-score">
+        <div class="stat-pill-icon"><i class="fa-solid fa-star"></i></div>
+        <div class="stat-pill-info">
+          <span class="stat-pill-label">คะแนน</span>
+          <span class="stat-pill-value" id="game-score">0</span>
+        </div>
+      </div>
+
+      <!-- Round dots -->
+      <div class="round-dots" id="round-dots">
+        <!-- Filled by JS -->
+      </div>
+
+      <div class="stat-pill pill-round">
+        <div class="stat-pill-icon"><i class="fa-solid fa-bullseye"></i></div>
+        <div class="stat-pill-info">
+          <span class="stat-pill-label">คำที่</span>
+          <span class="stat-pill-value" id="game-round">1/5</span>
+        </div>
+      </div>
+
+      <button class="btn btn-danger btn-icon" onclick="app.endGameForce()" title="จบเกม" style="flex-shrink:0;">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <!-- Camera -->
+    <div class="camera-wrapper">
+      <canvas class="output_canvas" id="game_canvas"></canvas>
+
+      <div id="camera-loading" class="camera-overlay">
+        <div class="spin-icon"></div>
+        <p>กำลังเปิดกล้องและระบบเสียง...</p>
+      </div>
+
+      <div id="listening-indicator" class="listening-overlay" style="display:none;">
+        <div class="mic-ring"><i class="fa-solid fa-microphone" style="font-size:0.75rem;"></i></div>
+        <span>กำลังฟังเสียง... พูดได้เลย!</span>
+      </div>
+    </div>
+
+    <!-- Task Card -->
+    <div class="task-card glass-card">
+      <div class="task-label">
+        <i class="fa-solid fa-volume-high"></i>
+        <span id="task-instruction">อ้าปากกว้างๆ แล้วพูดคำว่า</span>
+      </div>
+
+      <div class="target-word-wrap">
+        <div class="target-word" id="target-word">เตรียมพร้อม</div>
+      </div>
+
+      <!-- Feedback -->
+      <div id="speech-feedback" class="feedback-box">
+        <i class="fa-solid fa-comment-dots feedback-icon"></i>
+        <span>กดปุ่มไมโครโฟนเพื่อเริ่มพูด</span>
+      </div>
+
+      <!-- Mouth Progress -->
+      <div class="mouth-progress-wrap">
+        <div class="mouth-progress-header">
+          <span class="mouth-progress-label" id="progress-text">ท่าทางปาก</span>
+          <span class="mouth-progress-value" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div id="game-progress-bar" class="progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="action-buttons">
+        <button id="btn-listen" class="btn btn-mic" onclick="app.startListening()">
+          <i class="fa-solid fa-microphone"></i> กดเพื่อพูด
+        </button>
+        <button class="btn btn-secondary" onclick="app.skipWord()">
+          ข้ามคำนี้ <i class="fa-solid fa-forward-step"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────
+     SCREEN: RESULT
+───────────────────────────────────────── -->
+<div id="screen-result" class="screen">
+  <div class="glass-card text-center">
+
+    <div class="result-trophy">
+      <div class="result-rays"></div>
+      <div class="result-trophy-icon">🏆</div>
+    </div>
+
+    <h1 class="result-title">เก่งมากเลย!</h1>
+    <p class="result-sub">คุณฝึกพูดและบริหารกล้ามเนื้อใบหน้าได้สำเร็จ ยอดเยี่ยมมาก!</p>
+
+    <div class="score-display">
+      <div class="score-display-label">คะแนนของคุณ</div>
+      <div class="score-display-value" id="res-score">0</div>
+    </div>
+
+    <div class="result-stats">
+      <div class="result-stat-item stat-ok">
+        <div class="result-stat-icon"><i class="fa-solid fa-check"></i></div>
+        <div>
+          <div class="result-stat-label">พูดผ่าน</div>
+          <div class="result-stat-value text-mint" id="res-completed">0 <small style="font-size:0.75rem;">คำ</small></div>
+        </div>
+      </div>
+      <div class="result-stat-item stat-skip">
+        <div class="result-stat-icon"><i class="fa-solid fa-forward-step"></i></div>
+        <div>
+          <div class="result-stat-label">ข้าม</div>
+          <div class="result-stat-value text-gold" id="res-skipped">0 <small style="font-size:0.75rem;">คำ</small></div>
+        </div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-lg btn-block pulse-btn" onclick="app.showScreen('screen-home')" style="margin-bottom:10px;">
+      <i class="fa-solid fa-rotate-right"></i> เล่นอีกครั้ง
+    </button>
+    <button class="btn btn-secondary btn-block" onclick="app.showScreen('screen-difficulty')">
+      <i class="fa-solid fa-list"></i> เปลี่ยนระดับ
+    </button>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────
+     AUDIO & VIDEO (hidden)
+───────────────────────────────────────── -->
+<audio id="snd-success" src="assets/success-sound.mp3"></audio>
+<audio id="snd-cheer" src="assets/cheer-voice.mp3"></audio>
+<video class="input_video" autoplay playsinline style="display:none;"></video>
+
+<!-- Scripts -->
+<script src="config.js"></script>
+<script src="db.js"></script>
+<script src="game.js"></script>
+
 </body>
-
 </html>
