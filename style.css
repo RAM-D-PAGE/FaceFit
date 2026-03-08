@@ -64,6 +64,48 @@ body {
   overflow-x: hidden;
   font-size: 17px;
   line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── Accessibility Bar ─── */
+.access-bar {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  display: flex;
+  gap: 10px;
+}
+
+.access-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  backdrop-filter: blur(10px) var(--glass-saturate);
+  -webkit-backdrop-filter: blur(10px) var(--glass-saturate);
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow-sm);
+}
+
+.access-btn:hover {
+  transform: translateY(-3px) scale(1.1);
+  color: var(--teal-dark);
+  box-shadow: var(--shadow-md);
+  border-color: var(--teal);
+}
+
+.access-btn.active {
+  background: var(--teal);
+  color: white;
+  border-color: var(--teal-dark);
 }
 
 h1,
@@ -1186,13 +1228,28 @@ h4 {
   box-shadow: var(--shadow-sm);
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-.result-stat-item:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+.result-stat-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
 
 /* Staggered entry for results */
-.screen-enter .result-stat-item:nth-child(1) { animation: screenEnter 0.5s 0.1s both; }
-.screen-enter .result-stat-item:nth-child(2) { animation: screenEnter 0.5s 0.2s both; }
-.screen-enter .result-stat-item:nth-child(3) { animation: screenEnter 0.5s 0.3s both; }
-.screen-enter .result-stat-item:nth-child(4) { animation: screenEnter 0.5s 0.4s both; }
+.screen-enter .result-stat-item:nth-child(1) {
+  animation: screenEnter 0.5s 0.1s both;
+}
+
+.screen-enter .result-stat-item:nth-child(2) {
+  animation: screenEnter 0.5s 0.2s both;
+}
+
+.screen-enter .result-stat-item:nth-child(3) {
+  animation: screenEnter 0.5s 0.3s both;
+}
+
+.screen-enter .result-stat-item:nth-child(4) {
+  animation: screenEnter 0.5s 0.4s both;
+}
 
 .result-stat-icon {
   width: 40px;

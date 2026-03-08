@@ -585,7 +585,10 @@ const app = {
     document.body.classList.toggle('high-contrast', on);
     localStorage.setItem('ff_highContrast', on ? '1' : '0');
     const btn = document.getElementById('btn-high-contrast');
-    if (btn) btn.innerHTML = on ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-circle-half-stroke"></i>';
+    if (btn) {
+      btn.innerHTML = on ? '<i class="fa-solid fa-sun"></i>' : '<i class="fa-solid fa-circle-half-stroke"></i>';
+      btn.classList.toggle('active', on);
+    }
     if (!silent) toast.show(on ? 'เปิด High Contrast Mode' : 'ปิด High Contrast Mode', 'info', 2000);
   },
 
@@ -594,6 +597,8 @@ const app = {
     this.state.oneHandMode = on;
     document.body.classList.toggle('one-hand', on);
     localStorage.setItem('ff_oneHand', on ? '1' : '0');
+    const btn = document.getElementById('btn-onehand');
+    if (btn) btn.classList.toggle('active', on);
     if (!silent) toast.show(on ? 'เปิด One-hand Mode' : 'ปิด One-hand Mode', 'info', 2000);
   },
 
@@ -602,9 +607,12 @@ const app = {
     this.state.ttsEnabled = tts.enabled;
     localStorage.setItem('ff_tts', tts.enabled ? '1' : '0');
     const btn = document.getElementById('btn-tts');
-    if (btn) btn.innerHTML = tts.enabled
-      ? '<i class="fa-solid fa-volume-high"></i>'
-      : '<i class="fa-solid fa-volume-xmark"></i>';
+    if (btn) {
+      btn.innerHTML = tts.enabled
+        ? '<i class="fa-solid fa-volume-high"></i>'
+        : '<i class="fa-solid fa-volume-xmark"></i>';
+      btn.classList.toggle('active', tts.enabled);
+    }
     toast.show(tts.enabled ? 'เปิดเสียงอ่านคำ' : 'ปิดเสียงอ่านคำ', 'info', 2000);
   },
 
