@@ -407,8 +407,19 @@ const app = {
         let points = 10;
         let bonus = 0;
 
-        let actionVal = this.state.expectedAction === 'smile' ? this.state.smileWidth : this.state.mouthOpenness;
-        let actionName = this.state.expectedAction === 'smile' ? 'ฉีกยิ้ม' : 'อ้าปากกว้าง';
+        let actionVal = 0;
+        let actionName = '';
+
+        if (this.state.expectedAction === 'smile') {
+            actionVal = this.state.smileWidth;
+            actionName = 'ฉีกยิ้ม';
+        } else if (this.state.expectedAction === 'pucker') {
+            actionVal = this.state.puckerWidth;
+            actionName = 'ทำปากจู๋';
+        } else {
+            actionVal = this.state.mouthOpenness;
+            actionName = 'อ้าปากกว้าง';
+        }
 
         if (this.state.difficulty === 'easy' && actionVal > 40) bonus = 5;
         if (this.state.difficulty === 'normal' && actionVal > 30) bonus = 3;
@@ -518,6 +529,9 @@ const app = {
             if (this.state.isCalibrating) {
                 if (distance > this.state.calibMaxMouth) this.state.calibMaxMouth = distance;
                 if (sDistance > this.state.calibMaxSmile) this.state.calibMaxSmile = sDistance;
+                if (this.state.calibMinSmile === undefined || sDistance < this.state.calibMinSmile) {
+                    this.state.calibMinSmile = sDistance;
+                }
 
                 this.state.calibTicks++;
                 const totalTicks = 100; // ~3.5 seconds
@@ -539,9 +553,30 @@ const app = {
             let smilePercent = Math.max(0, Math.min(100, ((sDistance - 0.08) / smileDenominator) * 100));
             this.state.smileWidth = smilePercent;
 
+            // Calculate Pucker Percent
+            let minSmile = this.state.calibMinSmile || 0.08;
+            let maxPuckerDistance = minSmile * 0.7; // Assume max pucker reduces neutral width by 30%
+            let puckerDenominator = Math.max(0.01, minSmile - maxPuckerDistance);
+            let puckerPercent = 0;
+            if (sDistance < minSmile) {
+                puckerPercent = Math.min(100, ((minSmile - sDistance) / puckerDenominator) * 100);
+            }
+            this.state.puckerWidth = puckerPercent;
+
             // Update UI based on expected action
-            let displayPercent = this.state.expectedAction === 'smile' ? smilePercent : openPercent;
-            let actionText = this.state.expectedAction === 'smile' ? 'ฉีกยิ้ม' : 'อ้าปากกว้าง';
+            let displayPercent = 0;
+            let actionText = '';
+
+            if (this.state.expectedAction === 'smile') {
+                displayPercent = smilePercent;
+                actionText = 'ฉีกยิ้ม';
+            } else if (this.state.expectedAction === 'pucker') {
+                displayPercent = puckerPercent;
+                actionText = 'ทำปากจู๋';
+            } else {
+                displayPercent = openPercent;
+                actionText = 'อ้าปากกว้าง';
+            }
 
             // Smoothly update bar
             this.els.progressBar.style.width = `${displayPercent}%`;
@@ -585,6 +620,7 @@ const app = {
         // Reset calibration values
         this.state.calibMaxMouth = 0.05;
         this.state.calibMaxSmile = 0.10;
+        this.state.calibMinSmile = undefined;
         document.getElementById('calib-progress-bar').style.width = '0%';
 
         const instruction = document.getElementById('calib-instruction');
