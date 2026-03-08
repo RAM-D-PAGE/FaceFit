@@ -26,14 +26,23 @@ const db = {
         }
     },
 
+    async hashPassword(password) {
+        const msgBuffer = new TextEncoder().encode(password);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    },
+
     async adminLogin(username, password) {
         if (!window.supabaseClient) return false;
         try {
+            const hashedPass = await this.hashPassword(password);
+
             const { data, error } = await window.supabaseClient
                 .from('admins')
                 .select('*')
                 .eq('username', username)
-                .eq('password', password)
+                .eq('password', hashedPass)
                 .single();
 
             if (error || !data) return false;

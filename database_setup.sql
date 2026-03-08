@@ -57,8 +57,8 @@ CREATE POLICY "Allow anonymous all on vocabulary" ON public.vocabulary FOR ALL U
 CREATE POLICY "Allow anonymous all on play_history" ON public.play_history FOR ALL USING (true);
 
 -- 6. Insert Default Data
--- สร้างบัญชีแอดมินเริ่มต้น (สามารถลบหรือเปลี่ยนรหัสผ่านได้ในระบบ)
-INSERT INTO public.admins (username, password) VALUES ('admin', '1234');
+-- สร้างบัญชีแอดมินเริ่มต้น รหัสผ่านคือ 1234 (ถูกเข้ารหัสเป็น SHA-256 แล้วเพื่อความปลอดภัย)
+INSERT INTO public.admins (username, password) VALUES ('admin', '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4');
 
 -- ใส่คำศัพท์พื้นฐานสำหรับกายภาพบำบัด (ข้อมูลจริงที่ใช้งานได้เลย)
 INSERT INTO public.vocabulary (word, hint, action, aliases, difficulty) VALUES
