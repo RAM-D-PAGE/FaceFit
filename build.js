@@ -6,8 +6,8 @@ const dbKey = process.env.SUPABASE_KEY || '';
 
 const configContent = `// ไฟล์ถูกสร้างอัตโนมัติจาก Vercel Build (build.js)
 const CONFIG = {
-    SUPABASE_URL: '${dbUrl}',
-    SUPABASE_KEY: '${dbKey}'
+    SUPABASE_URL: '${dbUrl.trim()}',
+    SUPABASE_KEY: '${dbKey.trim()}'
 };
 `;
 
