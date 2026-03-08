@@ -1,0 +1,22 @@
+{
+  "name": "FaceFit Rehab",
+  "short_name": "FaceFit",
+  "description": "เกมฝึกพูดและบริหารกล้ามเนื้อใบหน้า สำหรับทำกายภาพบำบัดผู้สูงอายุ Stroke",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#E8F4F8",
+  "theme_color": "#4A90E2",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
