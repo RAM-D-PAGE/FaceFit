@@ -1,4 +1,4 @@
-const CACHE_NAME = 'facefit-rehab-v3';
+const CACHE_NAME = 'facefit-rehab-v4';
 const ASSETS = [
     './',
     './index.html',
@@ -61,16 +61,16 @@ self.addEventListener('fetch', (event) => {
                             return networkResponse;
                         }
 
-                        // Clone the response because it's a stream and can only be consumed once
+                        // Clone the response
                         var responseToCache = networkResponse.clone();
 
-                        caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                // Do not cache external cross-origin requests unless necessary
-                                if (event.request.url.indexOf('http') === 0) {
+                        // Only cache our own domain assets, never external APIs like Supabase
+                        if (event.request.url.startsWith(self.location.origin)) {
+                            caches.open(CACHE_NAME)
+                                .then((cache) => {
                                     cache.put(event.request, responseToCache);
-                                }
-                            });
+                                });
+                        }
 
                         return networkResponse;
                     }
