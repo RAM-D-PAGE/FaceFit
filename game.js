@@ -307,6 +307,11 @@ const app = {
             this.els.canvas.width = this.els.canvas.clientWidth;
             this.els.canvas.height = this.els.canvas.clientHeight;
         }
+        const calibCanvas = document.getElementById('calib_canvas');
+        if (calibCanvas) {
+            calibCanvas.width = calibCanvas.clientWidth;
+            calibCanvas.height = calibCanvas.clientHeight;
+        }
     },
 
     // --- Speech API ---
@@ -360,6 +365,10 @@ const app = {
     },
 
     startListening() {
+        if (!this.recognition) {
+            alert("เบราว์เซอร์ไม่รองรับไมโครโฟน");
+            return;
+        }
         if (this.state.isListening) return;
         try {
             this.recognition.start();
