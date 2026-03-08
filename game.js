@@ -475,7 +475,7 @@ const app = {
 
         this.camera = new Camera(this.els.video, {
             onFrame: async () => {
-                if (this.state.currentScreen === 'screen-game') {
+                if (this.state.currentScreen === 'screen-game' || this.state.currentScreen === 'screen-calibration') {
                     await this.faceMesh.send({ image: this.els.video });
                 }
             },
