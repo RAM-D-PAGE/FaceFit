@@ -344,6 +344,8 @@ const app = {
             console.error("Speech Recognition Error:", event.error);
             if (event.error === 'no-speech') {
                 this.setFeedback("ไม่ได้ยินเสียง กรุณาลองใหม่อีกครั้ง", "error");
+            } else if (event.error === 'network') {
+                this.setFeedback("การเชื่อมต่อขัดข้อง (ไม่สามารถแปลเสียงได้) <br>แนะนำให้ใช้เน็ตมือถือ หรือกดปุ่ม 'ข้ามคำนี้' เพื่อเล่นต่อครับ", "error");
             } else {
                 this.setFeedback("เกิดข้อผิดพลาดของไมโครโฟน", "error");
             }
