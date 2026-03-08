@@ -14,6 +14,8 @@ const CONFIG = {
 try {
     fs.writeFileSync('config.js', configContent);
     console.log('Build Success: config.js generated from Environment Variables.');
+    console.log('URL defined?', !!dbUrl);
+    console.log('Key defined?', dbKey ? dbKey.substring(0, 5) + '...' : 'NO_KEY');
 } catch (err) {
     console.error('Build Error:', err);
     process.exit(1);

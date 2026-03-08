@@ -1,4 +1,4 @@
-const CACHE_NAME = 'facefit-rehab-v2';
+const CACHE_NAME = 'facefit-rehab-v3';
 const ASSETS = [
     './',
     './index.html',
