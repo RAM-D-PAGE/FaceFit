@@ -1,10 +1,13 @@
 -- Scripts for setting up the Supabase database for FaceFit Rehab (Production Ready)
 -- Instructions: Copy and paste this script into the Supabase SQL Editor and run it.
 -- ลบตารางเก่า (ถ้ามี) เพื่อสร้างใหม่ให้พร้อมใช้งานจริง
-DROP TABLE IF EXISTS public.play_history;
-DROP TABLE IF EXISTS public.vocabulary;
-DROP TABLE IF EXISTS public.patients;
-DROP TABLE IF EXISTS public.admins;
+DROP TABLE IF EXISTS public.exercise_sessions CASCADE;
+DROP TABLE IF EXISTS public.exercise_plans CASCADE;
+DROP TABLE IF EXISTS public.patient_profiles CASCADE;
+DROP TABLE IF EXISTS public.play_history CASCADE;
+DROP TABLE IF EXISTS public.vocabulary CASCADE;
+DROP TABLE IF EXISTS public.patients CASCADE;
+DROP TABLE IF EXISTS public.admins CASCADE;
 
 -- 1. Create Admins Table (สำหรับพยาบาล/นักกายภาพ)
 CREATE TABLE public.admins (
@@ -22,39 +25,80 @@ CREATE TABLE public.patients (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 3. Create Vocabulary Table (ชุดคำศัพท์)
+-- 3. Create Patient Profiles (ข้อมูลการฝึกระดับบุคคล)
+CREATE TABLE public.patient_profiles (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  patient_id uuid REFERENCES public.patients(id) ON DELETE CASCADE,
+  rehab_phase int DEFAULT 1 CHECK (rehab_phase BETWEEN 1 AND 5),
+  weak_phonemes jsonb DEFAULT '[]',
+  avg_lip_symmetry float DEFAULT 75,
+  avg_mouth_openness float DEFAULT 50,
+  streak_days int DEFAULT 0,
+  last_session_date timestamptz,
+  total_sessions int DEFAULT 0,
+  best_score int DEFAULT 0,
+  family_notify_email text,
+  notes text,
+  updated_at timestamptz DEFAULT timezone('utc'::text, now())
+);
+
+-- 4. Create Vocabulary Table (ชุดคำศัพท์)
 CREATE TABLE public.vocabulary (
     id SERIAL PRIMARY KEY,
     word TEXT NOT NULL,
     hint TEXT NOT NULL,
-    action TEXT DEFAULT 'open', -- 'open' หรือ 'smile'
+    action TEXT DEFAULT 'open', -- 'open', 'smile', 'pucker'
     aliases JSONB DEFAULT '[]'::jsonb, -- Array ของคำที่มักพูดเพี้ยน เช่น ["ต๋า", "จ๋า"]
+    phonemes JSONB DEFAULT '[]'::jsonb,
     difficulty TEXT NOT NULL, -- 'easy', 'normal', 'hard'
+    phase int DEFAULT 3,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. Create Play History Table (ประวัติการฝึก)
-CREATE TABLE public.play_history (
-    id SERIAL PRIMARY KEY,
-    patient_id UUID REFERENCES public.patients(id) ON DELETE CASCADE,
-    score INTEGER NOT NULL,
-    completed INTEGER NOT NULL,
-    skipped INTEGER NOT NULL,
-    difficulty TEXT NOT NULL,
-    played_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+-- 5. Create Exercise Sessions (ประวัติการฝึกเชิงลึกแต่ละรอบ)
+CREATE TABLE public.exercise_sessions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  patient_id uuid REFERENCES public.patients(id) ON DELETE CASCADE,
+  phase int DEFAULT 3,
+  difficulty text DEFAULT 'normal',
+  score int DEFAULT 0,
+  success_rate float DEFAULT 0,
+  avg_mouth_openness float DEFAULT 0,
+  avg_lip_symmetry float DEFAULT 0,
+  duration_seconds int DEFAULT 0,
+  word_results jsonb DEFAULT '[]',
+  played_at timestamptz DEFAULT timezone('utc'::text, now())
 );
 
--- 5. Row Level Security Policies (ตั้งค่าสิทธิ์ให้เข้าถึงได้จากเว็บแอป)
+-- 6. Create Exercise Plans (แผนการฝึกสั่งโดยพยาบาล)
+CREATE TABLE public.exercise_plans (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  patient_id uuid REFERENCES public.patients(id) ON DELETE CASCADE,
+  target_phase int DEFAULT 1,
+  sessions_per_week int DEFAULT 5,
+  target_success_rate float DEFAULT 70,
+  notes text,
+  is_active boolean DEFAULT true,
+  created_at timestamptz DEFAULT timezone('utc'::text, now())
+);
+
+-- 7. Row Level Security Policies (ตั้งค่าสิทธิ์ให้เข้าถึงได้จากเว็บแอปแบบ Public)
+-- Note: In a real production environment where security is strict, setup proper rules here.
+-- For FaceFit WebApp scope utilizing the anon key:
 ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.patients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.patient_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.vocabulary ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.play_history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exercise_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.exercise_plans ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow anonymous all on admins" ON public.admins FOR ALL USING (true);
 CREATE POLICY "Allow anonymous all on patients" ON public.patients FOR ALL USING (true);
+CREATE POLICY "Allow anonymous all on patient_profiles" ON public.patient_profiles FOR ALL USING (true);
 CREATE POLICY "Allow anonymous all on vocabulary" ON public.vocabulary FOR ALL USING (true);
-CREATE POLICY "Allow anonymous all on play_history" ON public.play_history FOR ALL USING (true);
+CREATE POLICY "Allow anonymous all on exercise_sessions" ON public.exercise_sessions FOR ALL USING (true);
+CREATE POLICY "Allow anonymous all on exercise_plans" ON public.exercise_plans FOR ALL USING (true);
 
 -- 6. Insert Default Data
 -- สร้างบัญชีแอดมินเริ่มต้น รหัสผ่านคือ 1234 (ถูกเข้ารหัสเป็น SHA-256 แล้วเพื่อความปลอดภัย)

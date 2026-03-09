@@ -30,7 +30,7 @@ const db = {
   async hashPassword(pw) {
     const buf = new TextEncoder().encode(pw);
     const hash = await crypto.subtle.digest('SHA-256', buf);
-    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2,'0')).join('');
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
   },
 
   async adminLogin(username, password) {
@@ -163,6 +163,39 @@ const db = {
       );
 
       await this.updateProfile(updates);
+
+      // ── Automation Webhook (n8n, Make, etc.) ─────────────────────────────
+      if (CONFIG && CONFIG.ENABLE_WEBHOOKS && CONFIG.WEBHOOK_URL) {
+        try {
+          const webhookData = {
+            event: 'session_completed',
+            patient_id: this.patient.id,
+            patient_name: this.patient.name,
+            timestamp: new Date().toISOString(),
+            session_stats: {
+              phase: sessionData.phase,
+              difficulty: sessionData.difficulty,
+              score: sessionData.score,
+              success_rate: sessionData.successRate,
+              duration_seconds: sessionData.durationSeconds,
+              avg_mouth_openness: sessionData.avgMouthOpenness,
+              avg_lip_symmetry: sessionData.avgLipSymmetry
+            },
+            profile_updates: updates
+          };
+
+          fetch(CONFIG.WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(webhookData),
+            // Use no-cors or ignore response to not block the UI
+            mode: 'no-cors'
+          }).catch(e => console.warn('[FaceFit] Webhook trigger failed:', e));
+        } catch (e) {
+          console.warn('[FaceFit] Failed to prepare webhook data:', e);
+        }
+      }
+
       return !error;
     } catch (e) { return false; }
   },
