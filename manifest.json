@@ -1,16 +1,48 @@
 {
-  "name": "FaceFit Rehab",
+  "name": "FaceFit Rehab — ฟื้นฟูการพูด Stroke",
   "short_name": "FaceFit",
-  "description": "เกมฝึกพูดและบริหารกล้ามเนื้อใบหน้า สำหรับทำกายภาพบำบัดผู้สูงอายุ Stroke",
+  "description": "แอปฟื้นฟูการพูดสำหรับผู้ป่วย Stroke ที่มีภาวะ Dysarthria — ฝึกพูด บริหารกล้ามเนื้อ ติดตามผลได้ที่บ้าน",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#E8F4F8",
-  "theme_color": "#4A90E2",
   "orientation": "portrait-primary",
+  "background_color": "#FFF8F3",
+  "theme_color": "#FF6B6B",
+  "lang": "th",
+  "categories": ["health", "medical", "education"],
   "icons": [
     {
       "src": "assets/logo.png",
-      "type": "image/png"
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "assets/logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/screenshot-home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "หน้าหลัก FaceFit"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "เริ่มฝึกพูดเลย",
+      "short_name": "ฝึกพูด",
+      "url": "./index.html#game",
+      "icons": [{ "src": "assets/logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Dashboard พยาบาล",
+      "short_name": "Dashboard",
+      "url": "./dashboard.html",
+      "icons": [{ "src": "assets/logo.png", "sizes": "96x96" }]
     }
   ]
 }
